@@ -1,0 +1,481 @@
+import discord
+from discord.ext import commands
+import asyncio
+from selenium import webdriver
+from selenium.webdriver.common.action_chains import ActionChains
+import time
+import os
+
+chrome_options = webdriver.ChromeOptions()
+chrome_options.binary_location = os.environ.get("GOOGLE_CHROME_BIN")
+chrome_options.add_argument("--headless")
+chrome_options.add_argument("--disable-dev-shm-usage")
+chrome_options.add_argument("--no-sandbox")
+driver = webdriver.Chrome(executable_path=os.environ.get("CHROMEDRIVER_PATH"), chrome_options=chrome_options)
+driver.get("https://www.quizdb.org/")
+
+client = commands.Bot(command_prefix = '%')
+buzzer = 'none'
+dead = 0
+
+@client.event
+async def on_ready():
+    print('Bot is ready')
+
+@client.command()
+async def start(ctx):
+    global buzzer
+    global driver
+    global dead
+    timer = 0
+    dead = 0
+    buzzer = 'none'
+    count = 0 
+    correct_count = 0
+    dif_check = False
+    cat_check = False
+    dif_count = 0
+    cat_count = 0
+
+    def check_answer(msg):
+        return (msg.author.id == buzzer) & (msg.channel == ctx.channel)
+    def check_correct(msg):
+        return (msg.author.id == buzzer) & (msg.channel == ctx.channel) & ((msg.content == 'y') | (msg.content == 'n') | (msg.content == 'N') | (msg.content == 'Y'))
+    def check_next(msg):
+        return (msg.channel == ctx.channel) & ((msg.content == 'y') | (msg.content == 'Y'))
+    def check_categories(msg):
+        return (msg.channel == ctx.channel) & (msg.author == ctx.author)
+    def check_difficulties(msg):
+        return (msg.channel == ctx.channel) & (msg.author == ctx.author)
+
+    await ctx.send("What difficulty of questions would you like to play? \n 1: Middle School, 2: Easy High School, 3: Regular High School \n 4: Hard High School, 5: National High School, 6: Easy College \n 7: Regular College, 8: Hard College, 9: Open \n To select multiple difficulties, separate the values with a space.")
+    while dif_check == False:
+        try:
+            difficulties = await client.wait_for('message', check=check_difficulties)
+            dif_check = True
+        except:
+            dif_check = False
+    await ctx.send("What category of questions would you like to play? \n 1: Current-Events, 2: Fine-Arts, 3: Geography, \n 4: History, 5: Literature, 6: Mythology, \n 7: Philosophy, 8: Religion, 9: Science, \n 10: Social-Science, 11: Trash, 12: All \n To select multiple categories, separate the values with a space.")
+    while cat_check == False:
+        try:
+            categories = await client.wait_for('message', check=check_categories)
+            cat_check = True
+        except:
+            cat_check = False
+
+    dif_1 = driver.find_element_by_xpath("//*[@id=\"quizdb-page\"]/div/div[1]/div/div[2]/div[3]/div/div[2]/div[2]/div[1]")
+    dif_2 = driver.find_element_by_xpath("//*[@id=\"quizdb-page\"]/div/div[1]/div/div[2]/div[3]/div/div[2]/div[2]/div[2]")
+    dif_3 = driver.find_element_by_xpath("//*[@id=\"quizdb-page\"]/div/div[1]/div/div[2]/div[3]/div/div[2]/div[2]/div[3]")
+    dif_4 = driver.find_element_by_xpath("//*[@id=\"quizdb-page\"]/div/div[1]/div/div[2]/div[3]/div/div[2]/div[2]/div[4]")
+    dif_5 = driver.find_element_by_xpath("//*[@id=\"quizdb-page\"]/div/div[1]/div/div[2]/div[3]/div/div[2]/div[2]/div[5]")
+    dif_6 = driver.find_element_by_xpath("//*[@id=\"quizdb-page\"]/div/div[1]/div/div[2]/div[3]/div/div[2]/div[2]/div[6]")
+    dif_7 = driver.find_element_by_xpath("//*[@id=\"quizdb-page\"]/div/div[1]/div/div[2]/div[3]/div/div[2]/div[2]/div[7]")
+    dif_8 = driver.find_element_by_xpath("//*[@id=\"quizdb-page\"]/div/div[1]/div/div[2]/div[3]/div/div[2]/div[2]/div[8]")
+    dif_9 = driver.find_element_by_xpath("//*[@id=\"quizdb-page\"]/div/div[1]/div/div[2]/div[3]/div/div[2]/div[2]/div[9]")
+    cat_trash = driver.find_element_by_xpath("//*[@id=\"quizdb-page\"]/div/div[1]/div/div[2]/div[1]/div/div[2]/div[2]/div[11]")
+    cat_social_science = driver.find_element_by_xpath("//*[@id=\"quizdb-page\"]/div/div[1]/div/div[2]/div[1]/div/div[2]/div[2]/div[10]")
+    cat_science = driver.find_element_by_xpath("//*[@id=\"quizdb-page\"]/div/div[1]/div/div[2]/div[1]/div/div[2]/div[2]/div[9]")
+    cat_religion = driver.find_element_by_xpath("//*[@id=\"quizdb-page\"]/div/div[1]/div/div[2]/div[1]/div/div[2]/div[2]/div[8]")
+    cat_philosophy = driver.find_element_by_xpath("//*[@id=\"quizdb-page\"]/div/div[1]/div/div[2]/div[1]/div/div[2]/div[2]/div[7]")
+    cat_mythology = driver.find_element_by_xpath("//*[@id=\"quizdb-page\"]/div/div[1]/div/div[2]/div[1]/div/div[2]/div[2]/div[6]")
+    cat_literature = driver.find_element_by_xpath("//*[@id=\"quizdb-page\"]/div/div[1]/div/div[2]/div[1]/div/div[2]/div[2]/div[5]")
+    cat_history = driver.find_element_by_xpath("//*[@id=\"quizdb-page\"]/div/div[1]/div/div[2]/div[1]/div/div[2]/div[2]/div[4]")
+    cat_geography = driver.find_element_by_xpath("//*[@id=\"quizdb-page\"]/div/div[1]/div/div[2]/div[1]/div/div[2]/div[2]/div[3]")
+    cat_fine_arts = driver.find_element_by_xpath("//*[@id=\"quizdb-page\"]/div/div[1]/div/div[2]/div[1]/div/div[2]/div[2]/div[2]")
+    cat_current_events = driver.find_element_by_xpath("//*[@id=\"quizdb-page\"]/div/div[1]/div/div[2]/div[1]/div/div[2]/div[2]/div[1]")    
+
+    dif_1_bool = False
+    dif_2_bool = False
+    dif_3_bool = False
+    dif_4_bool = False
+    dif_5_bool = False
+    dif_6_bool = False
+    dif_7_bool = False
+    dif_8_bool = False
+    dif_9_bool = False
+    driver.find_element_by_xpath("//*[@id=\"quizdb-page\"]/div/div[1]/div/div[2]/div[3]/div/div[2]").click()
+    for dif in difficulties.content.split():
+        if (dif == '9') & (dif_9_bool == False):
+            dif_9.click()
+            dif_9_bool = True
+            dif_count += 1
+        elif (dif == '8') & (dif_8_bool == False):
+            dif_8.click()
+            dif_8_bool = True
+            dif_count += 1
+        elif (dif == '7') & (dif_7_bool == False):
+            dif_7.click()
+            dif_7_bool = True
+            dif_count += 1
+        elif (dif == '6') & (dif_6_bool == False):
+            dif_6.click()
+            dif_6_bool = True
+            dif_count += 1
+        elif (dif == '5') & (dif_5_bool == False):
+            dif_5.click()
+            dif_5_bool = True
+            dif_count += 1
+        elif (dif == '4') & (dif_4_bool == False):
+            dif_4.click()
+            dif_4_bool = True
+            dif_count += 1
+        elif (dif == '3') & (dif_3_bool == False):
+            dif_3.click()
+            dif_3_bool = True
+            dif_count += 1
+        elif (dif == '2') & (dif_2_bool == False):
+            dif_2.click()
+            dif_2_bool = True
+            dif_count += 1
+        elif (dif == '1') & (dif_1_bool == False):
+            dif_1.click()
+            dif_1_bool = True
+            dif_count += 1
+    
+    cat_trash_bool = False
+    cat_social_science_bool = False
+    cat_science_bool = False
+    cat_religion_bool = False
+    cat_philosophy_bool = False
+    cat_mythology_bool = False
+    cat_literature_bool = False
+    cat_history_bool = False
+    cat_geography_bool = False
+    cat_fine_arts_bool = False
+    cat_current_events_bool = False
+    cat_all_bool = False
+    driver.find_element_by_xpath("//*[@id=\"quizdb-page\"]/div/div[1]/div/div[2]/div[1]/div/div[2]").click()
+    for cat in categories.content.split():
+        if cat == '12':
+            cat_all_bool = True
+    if cat_all_bool == False:
+        for cat in categories.content.split():
+            if (cat == '11') & (cat_trash_bool == False):
+                cat_trash.click()
+                cat_trash_bool = True
+                cat_count += 1
+            elif (cat == '10') & (cat_social_science_bool == False):
+                cat_social_science.click()
+                cat_social_science_bool = True
+                cat_count += 1
+            elif (cat == '9') & (cat_science_bool == False):
+                cat_science.click()
+                cat_science_bool = True
+                cat_count += 1
+            elif (cat == '8') & (cat_religion_bool == False):
+                cat_religion.click()
+                cat_religion_bool = True
+                cat_count += 1
+            elif (cat == '7') & (cat_philosophy_bool == False):
+                cat_philosophy.click()
+                cat_philosophy_bool = True
+                cat_count += 1
+            elif (cat == '6') & (cat_mythology_bool == False):
+                cat_mythology.click()
+                cat_mythology_bool = True
+                cat_count += 1
+            elif (cat == '5') & (cat_literature_bool == False):
+                cat_literature.click()
+                cat_literature_bool = True
+                cat_count += 1
+            elif (cat == '4') & (cat_history_bool == False):
+                cat_history.click()
+                cat_history_bool = True
+                cat_count += 1
+            elif (cat == '3') & (cat_geography_bool == False):
+                cat_geography.click()
+                cat_geography_bool = True
+                cat_count += 1
+            elif (cat == '2') & (cat_fine_arts_bool == False):
+                cat_fine_arts.click()
+                cat_fine_arts_bool = True
+                cat_count += 1
+            elif (cat == '1') & (cat_current_events_bool == False):
+                cat_current_events.click()
+                cat_current_events_bool = True
+                cat_count += 1
+    if dif_count == 1:
+        dif_clear = driver.find_element_by_xpath("//*[@id=\"quizdb-page\"]/div/div[1]/div/div[2]/div[3]/div/div[2]/a/i")
+    if dif_count > 1:
+        dif_clear = driver.find_element_by_xpath("//*[@id=\"quizdb-page\"]/div/div[1]/div/div[2]/div[3]/div/div[2]/a[1]/i")
+    if cat_count == 1:
+        cat_clear = driver.find_element_by_xpath("//*[@id=\"quizdb-page\"]/div/div[1]/div/div[2]/div[1]/div/div[2]/a/i")
+    if cat_count > 1:
+        cat_clear = driver.find_element_by_xpath("//*[@id=\"quizdb-page\"]/div/div[1]/div/div[2]/div[1]/div/div[2]/a[1]/i")
+
+    random = driver.find_element_by_xpath("//*[@id=\"quizdb-page\"]/div/div[1]/div/div[1]/div[2]/div[2]") 
+    random.click()
+    question_count = driver.find_element_by_xpath("//*[@id=\"quizdb-page\"]/div/div[1]/div/div[1]/div[2]/div[2]/div[2]/div[3]") 
+    question_count.click()
+    num_of_questions = 25 
+    for i in range(0,num_of_questions):
+        dead += 1
+        correct = False
+        question_there = False
+
+        while question_there == False:
+            try:
+                driver.implicitly_wait(1)
+                question_text = driver.find_element_by_xpath(f"//*[@id=\"quizdb-page\"]/div/div[3]/div/div[1]/div[{i+2}]/div/div[2]/div[1]/span").text.split()
+                question_answer = driver.find_element_by_xpath(f"//*[@id=\"quizdb-page\"]/div/div[3]/div/div[1]/div[{i+2}]/div/div[2]/div[2]/div/div[1]/span").text
+                question_there = True
+            except:
+                question_there = False
+
+        question_message = await ctx.send(f'{question_text[0]}') 
+        await ctx.send(f'||{question_answer}||') 
+
+        for n in range(1,len(question_text),4):
+            try:
+                await question_message.edit(content = f'{question_message.content} {question_text[n]} {question_text[n+1]} {question_text[n+2]} {question_text[n+3]}')
+            except:
+                try:
+                    await question_message.edit(content = f'{question_message.content} {question_text[n]} {question_text[n+1]} {question_text[n+2]}')
+                except:
+                    try:
+                        await question_message.edit(content = f'{question_message.content} {question_text[n]} {question_text[n+1]}')
+                    except:
+                        await question_message.edit(content = f'{question_message.content} {question_text[n]}')
+            if buzzer != 'none': 
+                await ctx.send('What is your answer?')
+                try:
+                    await client.wait_for('message', check=check_answer, timeout=20) 
+                    try:
+                        await ctx.send('Were you correct? Respond with "y" or "n"')
+                        response = await client.wait_for('message', check=check_correct, timeout=25)
+                        if (response.content == 'y') | (response.content == 'Y') :
+                            await ctx.send('You are correct!')
+                            correct_count += 1
+                            correct = True
+                        elif (response.content == 'n') | (response.content == 'N'):
+                            await ctx.send('You are incorrect!')
+                            question_message = await ctx.send(question_message.content)
+                            await ctx.send(f'||{question_answer}||')
+                        buzzer = 'none'
+                    except:
+                        buzzer = 'none'
+                        await ctx.send('You ran out of time')
+                except: 
+                    buzzer = 'none'
+                    await ctx.send('You ran out of time')
+            if correct:
+                break
+            await asyncio.sleep(6/7) 
+        if not correct: 
+            await ctx.send('You have 10 seconds left to answer')
+            timer = 0
+            while timer < 10:
+                if buzzer != 'none':
+                    await ctx.send('What is your answer?')
+                    try:
+                        await client.wait_for('message', check=check_answer, timeout=20)
+                        try:
+                            await ctx.send('Were you correct? Respond with "y" or "n"')
+                            response = await client.wait_for('message', check=check_correct, timeout=25)
+                            if (response.content == 'y') | (response.content == 'Y'):
+                                await ctx.send('You are correct!')
+                                correct_count += 1
+                                correct = True
+                            buzzer = 'none'
+                        except:
+                            buzzer = 'none'
+                            await ctx.send('You ran out of time')
+                    except:
+                        buzzer = 'none'
+                        await ctx.send('You ran out of time')
+                if correct:
+                    break
+                await asyncio.sleep(1)
+                timer += 1
+        count += 1
+        if count != num_of_questions:
+            if dead >= 2:
+                await ctx.send('Are you still playing? Respond with \'y\' if you are.')
+                try:
+                    await client.wait_for('message', check=check_next, timeout=15)
+                except:
+                    await ctx.send('You have chosen to quit')
+                    break
+        if count == num_of_questions:
+            await ctx.send('You have finished all 25 questions. To do more, just use the \'start\' command again')
+        buzzer = 'none'
+        await ctx.send('Next question.')
+        await asyncio.sleep(1)
+    if dead >= 2:
+        try:
+            await ctx.send(f'The percentage of questions you got right was {round((correct_count/(count-2))*100,2)}%.')
+        except:
+            await ctx.send(f'The percentage of questions you got right was 0%.')
+    else:
+        await ctx.send(f'The percentage of questions you got right was {round((correct_count/count)*100,2)}%.')
+    if dif_count > 0:
+        if dif_count > 1:
+            for x in range(0,dif_count-1):
+                dif_clear = driver.find_element_by_xpath("//*[@id=\"quizdb-page\"]/div/div[1]/div/div[2]/div[3]/div/div[2]/a[1]/i")
+                dif_clear.click()
+                await asyncio.sleep(.2)
+            dif_clear = driver.find_element_by_xpath("//*[@id=\"quizdb-page\"]/div/div[1]/div/div[2]/div[3]/div/div[2]/a/i")
+        dif_clear.click()
+    if cat_count > 0:
+        if cat_count > 1:
+            for y in range(0,cat_count-1):
+                cat_clear = driver.find_element_by_xpath("//*[@id=\"quizdb-page\"]/div/div[1]/div/div[2]/div[1]/div/div[2]/a[1]/i")
+                cat_clear.click()
+                await asyncio.sleep(.2)
+            cat_clear = driver.find_element_by_xpath("//*[@id=\"quizdb-page\"]/div/div[1]/div/div[2]/div[1]/div/div[2]/a/i")
+        cat_clear.click()
+
+@client.command()
+async def vfa(ctx):
+    global buzzer
+    global driver
+    global dead
+    timer = 0
+    dead = 0
+    buzzer = 'none'
+    count = 0 
+    correct_count = 0
+
+    def check_answer(msg):
+        return (msg.author.id == buzzer) & (msg.channel == ctx.channel)
+    def check_correct(msg):
+        return (msg.author.id == buzzer) & (msg.channel == ctx.channel) & ((msg.content == 'y') | (msg.content == 'n') | (msg.content == 'N') | (msg.content == 'Y'))
+    def check_next(msg):
+        return (msg.channel == ctx.channel) & ((msg.content == 'y') | (msg.content == 'Y'))
+
+    dif_6 = driver.find_element_by_xpath("//*[@id=\"quizdb-page\"]/div/div[1]/div/div[2]/div[3]/div/div[2]/div[2]/div[6]")
+    dif_7 = driver.find_element_by_xpath("//*[@id=\"quizdb-page\"]/div/div[1]/div/div[2]/div[3]/div/div[2]/div[2]/div[7]")
+    dif_8 = driver.find_element_by_xpath("//*[@id=\"quizdb-page\"]/div/div[1]/div/div[2]/div[3]/div/div[2]/div[2]/div[8]")
+    viscat = driver.find_element_by_xpath("//*[@id=\"quizdb-page\"]/div/div[1]/div/div[2]/div[4]/div/div[2]/div[2]/div[12]")
+    driver.find_element_by_xpath("//*[@id=\"quizdb-page\"]/div/div[1]/div/div[2]/div[3]/div/div[2]").click()
+    dif_6.click()
+    dif_7.click()
+    dif_8.click()
+    driver.find_element_by_xpath("//*[@id=\"quizdb-page\"]/div/div[1]/div/div[2]/div[4]/div/div[2]").click()
+    viscat.click()
+
+    viscat_clear = driver.find_element_by_xpath("//*[@id=\"quizdb-page\"]/div/div[1]/div/div[2]/div[4]/div/div[2]/a/i")
+
+    random = driver.find_element_by_xpath("//*[@id=\"quizdb-page\"]/div/div[1]/div/div[1]/div[2]/div[2]") 
+    random.click()
+    question_count = driver.find_element_by_xpath("//*[@id=\"quizdb-page\"]/div/div[1]/div/div[1]/div[2]/div[2]/div[2]/div[3]") 
+    question_count.click()
+    num_of_questions = 25 
+    for i in range(0,num_of_questions):
+        dead += 1
+        correct = False
+        question_there = False
+
+        while question_there == False:
+            try:
+                driver.implicitly_wait(1)
+                question_text = driver.find_element_by_xpath(f"//*[@id=\"quizdb-page\"]/div/div[3]/div/div[1]/div[{i+2}]/div/div[2]/div[1]/span").text.split()
+                question_answer = driver.find_element_by_xpath(f"//*[@id=\"quizdb-page\"]/div/div[3]/div/div[1]/div[{i+2}]/div/div[2]/div[2]/div/div[1]/span").text
+                question_there = True
+            except:
+                question_there = False
+
+        question_message = await ctx.send(f'{question_text[0]}') 
+        await ctx.send(f'||{question_answer}||') 
+
+        for n in range(1,len(question_text),4):
+            try:
+                await question_message.edit(content = f'{question_message.content} {question_text[n]} {question_text[n+1]} {question_text[n+2]} {question_text[n+3]}')
+            except:
+                try:
+                    await question_message.edit(content = f'{question_message.content} {question_text[n]} {question_text[n+1]} {question_text[n+2]}')
+                except:
+                    try:
+                        await question_message.edit(content = f'{question_message.content} {question_text[n]} {question_text[n+1]}')
+                    except:
+                        await question_message.edit(content = f'{question_message.content} {question_text[n]}')
+            if buzzer != 'none': 
+                await ctx.send('What is your answer?')
+                try:
+                    await client.wait_for('message', check=check_answer, timeout=20) 
+                    try:
+                        await ctx.send('Were you correct? Respond with "y" or "n"')
+                        response = await client.wait_for('message', check=check_correct, timeout=25)
+                        if (response.content == 'y') | (response.content == 'Y') :
+                            await ctx.send('You are correct!')
+                            correct_count += 1
+                            correct = True
+                        elif (response.content == 'n') | (response.content == 'N'):
+                            await ctx.send('You are incorrect!')
+                            question_message = await ctx.send(question_message.content)
+                            await ctx.send(f'||{question_answer}||')
+                        buzzer = 'none'
+                    except:
+                        buzzer = 'none'
+                        await ctx.send('You ran out of time')
+                except: 
+                    buzzer = 'none'
+                    await ctx.send('You ran out of time')
+            if correct:
+                break
+            await asyncio.sleep(6/7) 
+        if not correct: 
+            await ctx.send('You have 10 seconds left to answer')
+            timer = 0
+            while timer < 10:
+                if buzzer != 'none':
+                    await ctx.send('What is your answer?')
+                    try:
+                        await client.wait_for('message', check=check_answer, timeout=20)
+                        try:
+                            await ctx.send('Were you correct? Respond with "y" or "n"')
+                            response = await client.wait_for('message', check=check_correct, timeout=25)
+                            if (response.content == 'y') | (response.content == 'Y'):
+                                await ctx.send('You are correct!')
+                                correct_count += 1
+                                correct = True
+                            buzzer = 'none'
+                        except:
+                            buzzer = 'none'
+                            await ctx.send('You ran out of time')
+                    except:
+                        buzzer = 'none'
+                        await ctx.send('You ran out of time')
+                if correct:
+                    break
+                await asyncio.sleep(1)
+                timer += 1
+        count += 1
+        if count != num_of_questions:
+            if dead >= 2:
+                await ctx.send('Are you still playing? Respond with \'y\' if you are.')
+                try:
+                    await client.wait_for('message', check=check_next, timeout=15)
+                except:
+                    await ctx.send('You have chosen to quit')
+                    break
+        if count == num_of_questions:
+            await ctx.send('You have finished all 25 questions. To do more, just use the \'start\' command again')
+        buzzer = 'none'
+        await ctx.send('Next question.')
+        await asyncio.sleep(1)
+    if dead >= 2:
+        try:
+            await ctx.send(f'The percentage of questions you got right was {round((correct_count/(count-2))*100,2)}%.')
+        except:
+            await ctx.send(f'The percentage of questions you got right was 0%.')
+    else:
+        await ctx.send(f'The percentage of questions you got right was {round((correct_count/count)*100,2)}%.')
+    driver.find_element_by_xpath("//*[@id=\"quizdb-page\"]/div/div[1]/div/div[2]/div[3]/div/div[2]/a[1]/i").click()
+    await asyncio.sleep(.2)
+    driver.find_element_by_xpath("//*[@id=\"quizdb-page\"]/div/div[1]/div/div[2]/div[3]/div/div[2]/a[1]/i").click()
+    await asyncio.sleep(.2)
+    driver.find_element_by_xpath("//*[@id=\"quizdb-page\"]/div/div[1]/div/div[2]/div[3]/div/div[2]/a/i").click()
+    await asyncio.sleep(.2)
+    viscat_clear.click()
+
+@client.event
+async def on_message(message):
+    global buzzer
+    global dead
+    if (buzzer == 'none') & ((message.content == 'buzz') | (message.content == 'b') | (message.content == 'Buzz') | (message.content == 'bz') | (message.content == 'B') | (message.content == 'Bz')) :
+        buzzer = message.author.id
+        dead = 0
+    await client.process_commands(message)
+
+client.run('[Bot key]')
